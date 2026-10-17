@@ -39,19 +39,44 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 <div id="out" role="status" aria-live="polite"></div>
 </main>
 <script>
-const S="wPc69DQOuUECajeU6CWcpQ==",I="9mVvloO0I/wjZ8pU",C="hTgzwBA1xKk4KHnNxQmjugSCQoHd+qtJ+/3UDCUj40hghq3AIQSOBfROv7o+X8iYGces4OUOG2q+2KQ3KA==";
-const d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function sha256(s){
+  var m=new TextEncoder().encode(s),l=m.length,n=((l+9+63)>>6)<<6,b=new Uint8Array(n);
+  b.set(m);b[l]=128;var dv=new DataView(b.buffer);dv.setUint32(n-4,(l*8)>>>0);dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  var K=[],p=2,c=0;
+  function pr(x){for(var i=2;i*i<=x;i++)if(x%i==0)return 0;return 1}
+  while(c<64){if(pr(p)){K[c++]=(Math.pow(p,1/3)%1)*4294967296|0}p++}
+  var H=[],q=2;c=0;
+  while(c<8){if(pr(q)){H[c++]=(Math.sqrt(q)%1)*4294967296|0}q++}
+  var w=new Array(64);
+  for(var o=0;o<n;o+=64){
+    for(var i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);
+    for(i=16;i<64;i++){var a=w[i-15],e=w[i-2];
+      var s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);
+      var s1=((e>>>17)|(e<<15))^((e>>>19)|(e<<13))^(e>>>10);
+      w[i]=(w[i-16]+s0+w[i-7]+s1)|0}
+    var A=H[0],B=H[1],C=H[2],D=H[3],E=H[4],F=H[5],G=H[6],Hh=H[7];
+    for(i=0;i<64;i++){
+      var S1=((E>>>6)|(E<<26))^((E>>>11)|(E<<21))^((E>>>25)|(E<<7));
+      var ch=(E&F)^(~E&G);
+      var t1=(Hh+S1+ch+K[i]+w[i])|0;
+      var S0=((A>>>2)|(A<<30))^((A>>>13)|(A<<19))^((A>>>22)|(A<<10));
+      var mj=(A&B)^(A&C)^(B&C);
+      var t2=(S0+mj)|0;
+      Hh=G;G=F;F=E;E=(D+t1)|0;D=C;C=B;B=A;A=(t1+t2)|0}
+    H[0]=(H[0]+A)|0;H[1]=(H[1]+B)|0;H[2]=(H[2]+C)|0;H[3]=(H[3]+D)|0;
+    H[4]=(H[4]+E)|0;H[5]=(H[5]+F)|0;H[6]=(H[6]+G)|0;H[7]=(H[7]+Hh)|0}
+  return H.map(function(x){return ('00000000'+(x>>>0).toString(16)).slice(-8)}).join('');
+}
+function stream(v,len){var out=[],i=0;while(out.length<len){var h=sha256('k'+i+v);for(var j=0;j<64&&out.length<len;j+=2)out.push(parseInt(h.substr(j,2),16));i++}return out}
+const V="4799c20fc758cd3e4e0dd73a4a2af4c49eb1cf3b499be32e3c9654eb1ef660c0",C="bBJ8RKYK4O1CxhaBCOgZ5L0reNNZaayDNxqQIrURvlvzYsOZy//OJp/LPnZ+";
 const out=document.getElementById("out");
 function show(t,ok){out.className=(ok?"ok":"no")+" pop";out.textContent=t;void out.offsetWidth}
-async function check(v){
-  try{
-    const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(v),"PBKDF2",false,["deriveKey"]);
-    const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:d(S),iterations:100000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
-    const p=await crypto.subtle.decrypt({name:"AES-GCM",iv:d(I)},k,d(C));
-    show(new TextDecoder().decode(p),true);
-  }catch(e){show("keep going",false)}
+function check(v){
+  if(sha256("v"+v)!==V){show("keep going",false);return}
+  var c=Array.from(atob(C),function(x){return x.charCodeAt(0)}),k=stream(v,c.length);
+  show(new TextDecoder().decode(new Uint8Array(c.map(function(x,i){return x^k[i]}))),true);
 }
-document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();check(document.getElementById("q").value)});
+document.getElementById("f").addEventListener("submit",function(e){e.preventDefault();check(document.getElementById("q").value)});
 </script>
 </body>
 </html>
