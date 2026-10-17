@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The code</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#e8edf1;--ink:#14213d;--muted:#5b6778;--line:#14213d;--accent:#e4572e;--ok:#1b7f5c;--field:#f7f9fa;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151f;--ink:#e6ebf2;--muted:#8d99ab;--line:#e6ebf2;--accent:#ff7a50;--ok:#4fd1a1;--field:#18202e}}
+:root[data-theme="dark"]{--bg:#10151f;--ink:#e6ebf2;--muted:#8d99ab;--line:#e6ebf2;--accent:#ff7a50;--ok:#4fd1a1;--field:#18202e}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px}
+main{width:100%;max-width:640px}
+h1{font-size:clamp(2.4rem,9vw,4.2rem);line-height:.95;margin:0 0 12px;font-weight:800;letter-spacing:-.03em}
+p.sub{margin:0 0 28px;color:var(--muted);font-size:1.05rem}
+form{display:flex;gap:0;border:2px solid var(--line);background:var(--field)}
+input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:500 1rem "IBM Plex Mono",ui-monospace,monospace;padding:16px;outline:none}
+input:focus-visible{box-shadow:inset 0 0 0 3px var(--accent)}
+button{border:0;border-left:2px solid var(--line);background:var(--ink);color:var(--bg);font:800 1rem "Bricolage Grotesque",sans-serif;padding:0 22px;cursor:pointer}
+button:hover{background:var(--accent);color:#fff}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#out{margin-top:24px;min-height:3.2em;font-size:1.5rem;font-weight:600;overflow-wrap:anywhere}
+#out.ok{color:var(--ok)}
+#out.no{color:var(--muted)}
+#out.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#out.pop{animation:none}}
+</style>
+</head>
+<body>
+<main>
+<form id="f" autocomplete="off">
+<input id="q" type="search" placeholder="Type or paste the code…" aria-label="Code" spellcheck="false" autocapitalize="off" autocorrect="off">
+<button type="submit">Submit</button>
+</form>
+<div id="out" role="status" aria-live="polite"></div>
+</main>
+<script>
+const S="wPc69DQOuUECajeU6CWcpQ==",I="9mVvloO0I/wjZ8pU",C="hTgzwBA1xKk4KHnNxQmjugSCQoHd+qtJ+/3UDCUj40hghq3AIQSOBfROv7o+X8iYGces4OUOG2q+2KQ3KA==";
+const d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const out=document.getElementById("out");
+function show(t,ok){out.className=(ok?"ok":"no")+" pop";out.textContent=t;void out.offsetWidth}
+async function check(v){
+  try{
+    const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(v),"PBKDF2",false,["deriveKey"]);
+    const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:d(S),iterations:100000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);
+    const p=await crypto.subtle.decrypt({name:"AES-GCM",iv:d(I)},k,d(C));
+    show(new TextDecoder().decode(p),true);
+  }catch(e){show("keep going",false)}
+}
+document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();check(document.getElementById("q").value)});
+</script>
+</body>
+</html>
